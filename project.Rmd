@@ -1,0 +1,117 @@
+---
+title: "Practical Machine Learning Project"
+author: "La Monte H.P. Yarroll"
+date: "11/21/2014"
+output: html_document
+---
+
+This report is prepared for the Johns Hopkins Bloomberg School of Public Health course __Practical Machine Learning__ taught on Coursera.
+
+##Core Questions and Executive Summary
+
+The goal of this project is to use data from accelerometers on the
+belt, forearm, arm, and dumbell of 6 participants. They were asked to
+perform barbell lifts correctly and incorrectly in 5 different
+ways. More information is available from the website here:
+http://groupware.les.inf.puc-rio.br/har (see the section on the Weight
+Lifting Exercise Dataset).
+
+##How I built my model
+
+I identified the first 7 variables as metadata about the experiments
+themselves. Because of regularity of method in creating the data,
+some of these variables are very accurate but uninteresting
+predictors of the final data. I remove them.
+
+```{r}
+require(caret)
+require(doMC)
+registerDoMC(2) # I have two cores on my laptop.
+set.seed(123)
+raw.training <- read.csv("pml-training.csv")
+final.testing <- read.csv("pml-testing.csv")
+```
+
+Many of the variables are mostly NA or "" interspersed with a few
+"#DIV/0!", so I remove those.
+
+```{r}
+mostly <- function(test) {function(var) {sum(test(var)) / length(var) > 0.5}}
+isJunk <- mostly(function(a) {is.na(a) | a == ""})
+removeJunkVars <- function(fr) {
+  badvars = c()
+  for (l in labels(fr)[[2]]) {
+    badvars <- append(badvars, isJunk(fr[[l]]))
+  }
+  fr[,badvars == FALSE]
+}
+```
+
+I set up a toy dataset which is 1% of the training set so that I can
+test the computational tractability of various options quickly. I do
+not use this dataset for validation, so I feel justified in leaving
+the members of the toy dataset in the training dataset.
+
+```{r}
+metadata <- c(1,2,3,4,5,6,7)
+inTrain <- createDataPartition(y=raw.training$classe, p=0.7, list=FALSE)
+training <- removeJunkVars(raw.training[inTrain,-metadata])
+inToy <- createDataPartition(y=training$classe, p=0.01, list=FALSE)
+toy <- removeJunkVars(training[inToy,])
+testing.validation <- removeJunkVars(raw.training[-inTrain,-metadata])
+inTesting <- createDataPartition(y=testing.validation$classe, p=0.5, list=FALSE)
+testing <- testing.validation[inTesting,]
+validation <- testing.validation[-inTesting,]
+```
+
+The original paper uses random forests, so we'll start with that. This
+training completes in a few minutes, so it seems like a good starting
+point.
+
+```{r cache = T}
+modFit.toy <- train(classe ~ ., method="rf", data=toy)
+```
+
+The full training dataset is two orders of magnitude larger, so I
+compute two orders of magnitude fewer trees.
+
+```{r cache = T}
+modFit <- train(classe ~ ., method="rf", data=training, ntree=5)
+```
+
+This model produces acceptable accuracy on the testing set.
+
+```{r}
+pred.testing <- predict(modFit, testing)
+pred.testing.right <- pred.testing == testing$classe
+sum(pred.testing.right)/length(pred.testing.right)
+```
+##How I used cross validation
+
+I've reserved a portion of the original training data for cross
+validation. The model still produces an acceptable accuracy on the
+testing set.
+```{r}
+pred.validation <- predict(modFit, validation)
+pred.validation.right <- pred.validation == validation$classe
+sum(pred.validation.right)/length(pred.validation.right)
+```
+This ratio above is our expected out of sample error.
+
+##Predicting 20 different test cases
+```{r}
+pred.final.testing <- predict(modFit, final.testing)
+
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("answers/problem_id_",i,".txt")
+    write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+  }
+}
+pml_write_files(pred.final.testing)
+```
+
+##References
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.

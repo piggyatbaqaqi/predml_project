@@ -76,7 +76,7 @@ The full training dataset is two orders of magnitude larger, so I
 compute two orders of magnitude fewer trees.
 
 ```{r cache = T}
-modFit <- train(classe ~ ., method="rf", data=training, ntree=5)
+modFit <- train(classe ~ ., method="rf", data=training, ntree=10)
 ```
 
 This model produces acceptable accuracy on the testing set.

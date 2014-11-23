@@ -63,6 +63,7 @@ if (window.hljs && document.readyState && document.readyState === "complete") {
 <div id="core-questions-and-executive-summary" class="section level2">
 <h2>Core Questions and Executive Summary</h2>
 <p>The goal of this project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: <a href="http://groupware.les.inf.puc-rio.br/har">http://groupware.les.inf.puc-rio.br/har</a> (see the section on the Weight Lifting Exercise Dataset).</p>
+<p>I built a model which exhibits an accuracy above 98%.</p>
 </div>
 <div id="how-i-built-my-model" class="section level2">
 <h2>How I built my model</h2>
@@ -105,7 +106,7 @@ validation &lt;- testing.validation[-inTesting,]</code></pre>
 <pre><code>## Loading required package: randomForest
 ## randomForest 4.6-10
 ## Type rfNews() to see new features/changes/bug fixes.</code></pre>
-<p>The full training dataset is two orders of magnitude larger, so I compute two orders of magnitude fewer trees.</p>
+<p>The full training dataset is two orders of magnitude larger, so I compute roughly two orders of magnitude fewer trees.</p>
 <pre class="r"><code>modFit &lt;- train(classe ~ ., method=&quot;rf&quot;, data=training, ntree=10)</code></pre>
 <p>This model produces acceptable accuracy on the testing set.</p>
 <pre class="r"><code>pred.testing &lt;- predict(modFit, testing)</code></pre>
@@ -121,9 +122,9 @@ sum(pred.testing.right)/length(pred.testing.right)</code></pre>
 <p>I’ve reserved a portion of the original training data for cross validation. The model still produces an acceptable accuracy on the testing set.</p>
 <pre class="r"><code>pred.validation &lt;- predict(modFit, validation)
 pred.validation.right &lt;- pred.validation == validation$classe
-sum(pred.validation.right)/length(pred.validation.right)</code></pre>
-<pre><code>## [1] 0.9847</code></pre>
-<p>This ratio above is our expected out of sample error.</p>
+1 - sum(pred.validation.right)/length(pred.validation.right)</code></pre>
+<pre><code>## [1] 0.0153</code></pre>
+<p>The final number above is our expected out of sample error.</p>
 </div>
 <div id="predicting-20-different-test-cases" class="section level2">
 <h2>Predicting 20 different test cases</h2>

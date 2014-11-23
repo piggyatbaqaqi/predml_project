@@ -16,6 +16,8 @@ ways. More information is available from the website here:
 http://groupware.les.inf.puc-rio.br/har (see the section on the Weight
 Lifting Exercise Dataset).
 
+I built a model which exhibits an accuracy above 98%.
+
 ##How I built my model
 
 I identified the first 7 variables as metadata about the experiments
@@ -73,7 +75,7 @@ modFit.toy <- train(classe ~ ., method="rf", data=toy)
 ```
 
 The full training dataset is two orders of magnitude larger, so I
-compute two orders of magnitude fewer trees.
+compute roughly two orders of magnitude fewer trees.
 
 ```{r cache = T}
 modFit <- train(classe ~ ., method="rf", data=training, ntree=10)
@@ -94,9 +96,9 @@ testing set.
 ```{r}
 pred.validation <- predict(modFit, validation)
 pred.validation.right <- pred.validation == validation$classe
-sum(pred.validation.right)/length(pred.validation.right)
+1 - sum(pred.validation.right)/length(pred.validation.right)
 ```
-This ratio above is our expected out of sample error.
+The final number above is our expected out of sample error.
 
 ##Predicting 20 different test cases
 ```{r}
